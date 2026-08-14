@@ -6,7 +6,7 @@
 - Public project entry on LinkedIn (Featured) linking to repo and live site.
 - Three agents, minimum viable proof: one autonomous (human-above-the-loop), one approval-gated (human-in-the-loop), one dual-confirmation (highest risk tier).
 - A harness/orchestrator classifying requests by risk tier and routing under the correct oversight model.
-- Tokenomics: per-agent, per-task cost tracking with a visible budget cap.
+- Tokenomics: per-agent, per-task cost tracking with a visible budget cap. **Real-time/live view, not after-the-fact logging** — this requirement surfaced from a genuine gap noticed during the build itself (no live visibility into usage while working), which is exactly the blind spot this component should not repeat.
 - External site: single page, architecture diagram, governance narrative, live/demo-able self-service tool.
 - SSO gating self-service tools and the approval dashboard, via a managed provider.
 - Documentation standing alone as a portfolio artefact, not just code comments.
