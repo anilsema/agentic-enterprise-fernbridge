@@ -121,6 +121,20 @@ erDiagram
 
 **`ESCALATIONS` and `POLICY_POSITIONS` exist because the AdviceLine-to-Advocacy pattern is a first-class part of this system, not an afterthought.** A single AdviceLine request never creates a `POLICY_POSITIONS` row on its own. Only a pattern, tracked in `ESCALATIONS`, crossing whatever threshold gets defined, can feed into one. This is the data-layer expression of "AdviceLine escalates the pattern, not the individual case."
 
+## Security note — Row Level Security (RLS)
+
+RLS is **enabled from creation**, with no policies defined yet. This is Supabase's own recommended default when creating tables via the SQL Editor, and it is the safer starting point: RLS enabled with zero policies locks all table access to the `anon` and `authenticated` keys completely, while the `service_role` key (used server-side by the harness) bypasses RLS by design and is unaffected.
+
+What's still deferred to Monday: writing the actual RLS *policies* needed once the self-service tools require real, scoped access (e.g. an authenticated member reading only their own organisation's requests). Until those policies exist, no public or client-side key can touch these tables at all, which is the correct default for a governance-first build — access should be explicitly granted, never implicitly available.
+
+This matters specifically for this project: Supabase auto-generates a REST API over every table. Without RLS, that API would let anyone holding the public key read or write directly to `requests`, `approvals`, and `audit_log`, bypassing every risk tier and approval chain this schema exists to enforce. Enabling RLS from the start, even with no policies yet, keeps the governance model real at the data layer, not just documented, consistent with Governance Principle E (Foundation Before Capability).
+
+### Views require a separate fix: `security_invoker`
+
+RLS on the base tables does **not** automatically extend to views built on top of them. By default, a Postgres view runs with the *view creator's* permissions rather than the *querying user's*, meaning `v_agent_budget_status` could silently bypass RLS on `agents` and `token_usage` entirely, even after RLS was correctly enabled on both underlying tables. Supabase's Table Editor flags this directly as `UNRESTRICTED`.
+
+The fix is `create view ... with (security_invoker = true)` (Postgres 15+, which Supabase runs), which makes the view respect the querying user's own RLS permissions instead of the creator's. This is applied in `schema.sql`. Any future view added to this schema needs the same treatment, it is easy to forget precisely because the view still works correctly for the developer creating it, the gap only shows up from an unprivileged caller's perspective.
+
 ## What's deliberately not in scope for this build
 
 - No `MEMBER_PII` detail table (contact info, financial records) — the demo doesn't need real member data to prove the governance pattern, and inventing realistic-looking PII for a public repo is the wrong trade-off even for fictitious data.

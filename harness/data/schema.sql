@@ -140,7 +140,12 @@ create index idx_token_usage_agent on token_usage(agent_id);
 create index idx_token_usage_recorded_at on token_usage(recorded_at);
 
 -- Convenience view for the live dashboard: running spend per agent against its budget cap
-create view v_agent_budget_status as
+-- security_invoker = true: the view respects the querying user's RLS permissions,
+-- not the view creator's. Without this, the view bypasses RLS on its underlying
+-- tables entirely, see harness/data/data-model.md for why this matters here.
+create view v_agent_budget_status
+    with (security_invoker = true)
+as
 select
     a.id as agent_id,
     a.name,
