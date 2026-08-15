@@ -1,29 +1,5 @@
-import postgres from "postgres";
-import dotenv from "dotenv";
-import path from "path";
-import { existsSync } from "fs";
+import { sql } from "./db";
 import { lookupRiskScores, deriveTier, Pillar } from "./risk-catalog";
-
-// Resolve relative to the current working directory (you run `npx tsx` from
-// inside harness/, so one level up is the repo root where .env.local lives),
-// not __dirname, which can behave inconsistently under tsx's module loader.
-const envPath = path.resolve(process.cwd(), "../.env.local");
-
-if (!existsSync(envPath)) {
-  throw new Error(
-    `Could not find .env.local at ${envPath}. Are you running this from inside the harness/ folder?`
-  );
-}
-
-dotenv.config({ path: envPath });
-
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    `.env.local was found at ${envPath} but DATABASE_URL is not set inside it. Check the file contents.`
-  );
-}
-
-const sql = postgres(process.env.DATABASE_URL);
 
 export interface IntakeResult {
   requestId: string;
@@ -106,8 +82,4 @@ export async function submitRequest(
     tier: riskRow.overall_tier,
     status: "pending",
   };
-}
-
-export async function closeConnection() {
-  await sql.end();
 }

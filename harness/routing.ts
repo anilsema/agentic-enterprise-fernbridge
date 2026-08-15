@@ -1,19 +1,5 @@
-import postgres from "postgres";
-import dotenv from "dotenv";
-import path from "path";
-import { existsSync } from "fs";
+import { sql } from "./db";
 import { Pillar, Tier } from "./risk-catalog";
-
-const envPath = path.resolve(process.cwd(), "../.env.local");
-if (!existsSync(envPath)) {
-  throw new Error(`Could not find .env.local at ${envPath}. Run this from inside harness/.`);
-}
-dotenv.config({ path: envPath });
-if (!process.env.DATABASE_URL) {
-  throw new Error(`.env.local found but DATABASE_URL is not set.`);
-}
-
-const sql = postgres(process.env.DATABASE_URL);
 
 /**
  * Approver map — mirrors docs/governance-framework.md Part 2 exactly.
@@ -146,8 +132,4 @@ export async function routeRequest(requestId: string): Promise<RoutingResult> {
     approversAssigned,
     requestStatus: updated.status,
   };
-}
-
-export async function closeConnection() {
-  await sql.end();
 }

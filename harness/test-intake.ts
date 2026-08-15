@@ -1,4 +1,5 @@
-import { submitRequest, closeConnection } from "./intake";
+import { submitRequest } from "./intake";
+import { closeConnection } from "./db";
 
 async function run() {
   console.log("Test 1: known Low-tier task (match_export_resources)\n");

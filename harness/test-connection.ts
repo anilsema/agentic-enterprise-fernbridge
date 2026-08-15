@@ -1,25 +1,4 @@
-import postgres from "postgres";
-import dotenv from "dotenv";
-import path from "path";
-import { existsSync } from "fs";
-
-const envPath = path.resolve(process.cwd(), "../.env.local");
-
-if (!existsSync(envPath)) {
-  console.error(`Could not find .env.local at ${envPath}. Are you running this from inside the harness/ folder?`);
-  process.exit(1);
-}
-
-dotenv.config({ path: envPath });
-
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  console.error("DATABASE_URL not found. Check .env.local exists at the repo root and contains it.");
-  process.exit(1);
-}
-
-const sql = postgres(connectionString);
+import { sql, closeConnection } from "./db";
 
 async function testConnection() {
   try {
@@ -38,7 +17,7 @@ async function testConnection() {
   } catch (err) {
     console.error("❌ Connection or query failed:", err);
   } finally {
-    await sql.end();
+    await closeConnection();
   }
 }
 

@@ -1,18 +1,4 @@
-import postgres from "postgres";
-import dotenv from "dotenv";
-import path from "path";
-import { existsSync } from "fs";
-
-const envPath = path.resolve(process.cwd(), "../.env.local");
-if (!existsSync(envPath)) {
-  throw new Error(`Could not find .env.local at ${envPath}. Run this from inside harness/.`);
-}
-dotenv.config({ path: envPath });
-if (!process.env.DATABASE_URL) {
-  throw new Error(`.env.local found but DATABASE_URL is not set.`);
-}
-
-const sql = postgres(process.env.DATABASE_URL);
+import { sql } from "./db";
 
 /**
  * Metering and Rate-Limiting pattern (see Study Companion, section 2).
@@ -137,8 +123,4 @@ export async function checkCircuitBreaker(agentId: string): Promise<CircuitBreak
   }
 
   return { tripped, agentId, consecutiveFailures };
-}
-
-export async function closeConnection() {
-  await sql.end();
 }

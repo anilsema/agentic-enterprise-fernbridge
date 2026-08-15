@@ -1,5 +1,6 @@
-import { submitRequest, closeConnection as closeIntake } from "./intake";
-import { routeRequest, closeConnection as closeRouting } from "./routing";
+import { submitRequest } from "./intake";
+import { routeRequest } from "./routing";
+import { closeConnection } from "./db";
 
 async function run() {
   console.log("Test 1: Low tier (match_export_resources) — expect auto-approve, 0 approvals\n");
@@ -28,8 +29,7 @@ async function run() {
     r3.approversAssigned[1] === "Head of Legal";
   console.log(correctApprovers ? "✅ PASS — correctly overrode to Legal/Consulting approvers" : "❌ FAIL");
 
-  await closeIntake();
-  await closeRouting();
+  await closeConnection();
 }
 
 run();

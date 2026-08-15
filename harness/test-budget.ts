@@ -1,12 +1,5 @@
-import postgres from "postgres";
-import dotenv from "dotenv";
-import path from "path";
-import { existsSync } from "fs";
-import { checkBudget, recordUsage, recordAgentOutcome, checkCircuitBreaker, closeConnection } from "./budget";
-
-const envPath = path.resolve(process.cwd(), "../.env.local");
-dotenv.config({ path: envPath });
-const sql = postgres(process.env.DATABASE_URL!);
+import { sql, closeConnection } from "./db";
+import { checkBudget, recordUsage, recordAgentOutcome, checkCircuitBreaker } from "./budget";
 
 async function run() {
   // Create a fresh test agent with a small budget cap so we can actually exhaust it
@@ -54,7 +47,6 @@ async function run() {
   );
 
   await closeConnection();
-  await sql.end();
 }
 
 run();
