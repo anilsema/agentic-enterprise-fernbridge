@@ -30,3 +30,18 @@
 1. **Cut first:** the external site's visual polish. Plain and working beats beautiful and unfinished.
 2. **Cut second:** Agent 1's autonomous scope — narrow what it can do rather than dropping the tier entirely. The three-tier structure is the core argument.
 3. **Never cut:** the governance/risk classification documentation. Two working agents with excellent documentation beats three agents with none — the documentation is what makes this a credible AI governance artefact rather than a coding demo.
+
+## Open items tracker
+
+Carried from Friday's consolidation pass, updated as resolved:
+
+- [ ] Split the AdviceLine task into its own Legal/Consulting pillar row in `risk-catalog.ts` and `requests.pillar`, rather than the current task-type override stopgap in `routing.ts` (`LEGAL_CONSULTING_TASK_OVERRIDE`). The override works correctly (validated) but is a workaround, not the real fix.
+- [ ] Re-examine Advocacy Task 7 (post-policy roadshow content) vs Task 8 (published opinion pieces on unsettled issues) — scores currently sit close together despite the deliberate risk distinction drawn between explaining settled law and taking a public position on a contested one.
+- [ ] Define the specific pattern-detection threshold for the AdviceLine-to-Advocacy escalation trigger (the `escalations`/`escalation_requests` tables exist in schema.sql, the actual threshold logic is not yet built).
+- [x] **RESOLVED (Deep Block 2):** second High-tier approver for Advocacy/Membership when not externally/publicly facing. Falls back to a second sign-off from the same Tier-1 head role, required from a different individual than the first approval. Public-facing requests route to Head of Marketing and Transformation instead. Implemented and validated in `routing.ts`.
+- [x] **RESOLVED (Deep Block 2):** AdviceLine's pillar mismatch (catalog says `membership`, should route as `legal_consulting`) was a real correctness bug, not just a scoring nicety. Fixed via explicit task-type override in `routing.ts`, validated against real Postgres (Test 3) to confirm it correctly assigns Legal Counsel + Head of Legal rather than Membership's approvers.
+
+## Security checklist before Monday
+
+- [x] Row Level Security (RLS) enabled on all Supabase tables from creation, zero policies defined yet. `anon`/`authenticated` keys currently have no access at all; `service_role` (used by the harness) is unaffected by RLS.
+- [ ] Write actual RLS policies before the external site/self-service tools go live, scoping authenticated access to a member's own data. See `harness/data/data-model.md` for the full reasoning.
