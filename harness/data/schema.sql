@@ -132,7 +132,7 @@ create table token_usage (
     request_id uuid references requests(id),
     agent_id uuid not null references agents(id),
     tokens_used int not null,
-    cost_usd numeric(10,4) not null,
+    cost_usd numeric(12,6) not null, -- 6 decimal places: real Haiku call costs run ~$0.0003, numeric(10,4) silently rounded these to $0.0000
     recorded_at timestamptz not null default now()
 );
 

@@ -2,6 +2,7 @@ import { sql } from "./db";
 import { submitRequest } from "./intake";
 import { routeRequest } from "./routing";
 import { checkBudget, recordUsage, recordAgentOutcome, checkCircuitBreaker } from "./budget";
+import { getAdviceLineGuidanceFromClaude, WORST_CASE_ESTIMATED_COST } from "./claude-client";
 
 /**
  * Agent 3 — High tier, human-in-the-loop with DUAL confirmation.
@@ -17,6 +18,12 @@ import { checkBudget, recordUsage, recordAgentOutcome, checkCircuitBreaker } fro
  * which is exactly why this sits at Legal Counsel + Head of Legal, not a
  * lower tier. See docs/governance-framework.md and the risk-scoring
  * worksheet notes on this task.
+ *
+ * This is the ONE agent in the build that makes a real Claude API call
+ * (Haiku 4.5, hard output cap, conservative pre-call budget check using a
+ * worst-case estimate, actual measured cost recorded after the call
+ * returns). Agents 1 and 2 use simulated task logic deliberately, see
+ * README for the reasoning on why only this tier gets a live model call.
  */
 
 const ADVICE_TOPICS: Record<string, string> = {
@@ -25,7 +32,14 @@ const ADVICE_TOPICS: Record<string, string> = {
   "personal grievance": "A Personal Grievance claim has been raised or is anticipated. This requires direct Legal Counsel involvement, not general guidance. Do not provide advice beyond acknowledging receipt and confirming escalation.",
 };
 
-function getAdviceGuidance(topicKeyword: string): string {
+/**
+ * Offline fallback only — used by validation/tests that don't have a live
+ * ANTHROPIC_API_KEY, not invoked automatically if the real API call fails.
+ * A real API failure should surface as a genuine 'failure' outcome (see
+ * actOnDualApproval below), not be silently papered over with canned text,
+ * that would misrepresent what actually happened.
+ */
+function getFallbackAdviceGuidance(topicKeyword: string): string {
   const key = topicKeyword.toLowerCase().trim();
   return ADVICE_TOPICS[key] ?? "General employment relations query. Standard AdviceLine guidance applies; escalate to Legal Counsel if the member's situation involves any live dispute or threatened claim.";
 }
@@ -148,20 +162,39 @@ export async function actOnDualApproval(
     return { requestId, sequence, decision: "approved", fullyApproved: true, executed: false, reason: "Circuit breaker tripped during this run." };
   }
 
-  const estimatedCost = 0.05; // highest tier, illustrative cost premium for the more careful handling this task warrants
-  const budgetCheck = await checkBudget(agent.id, estimatedCost);
+  // Pre-call check uses the CONSERVATIVE WORST-CASE estimate (see claude-client.ts),
+  // since we do not yet know the real cost until the API call actually returns.
+  const budgetCheck = await checkBudget(agent.id, WORST_CASE_ESTIMATED_COST);
   if (!budgetCheck.allowed) {
     await recordAgentOutcome(agent.id, requestId, "failure", { reason: "budget_exceeded" });
     return {
       requestId, sequence, decision: "approved", fullyApproved: true, executed: false,
-      reason: `Insufficient budget: $${budgetCheck.remainingBudget.toFixed(2)} remaining.`,
+      reason: `Insufficient budget: $${budgetCheck.remainingBudget.toFixed(2)} remaining, worst-case call needs $${WORST_CASE_ESTIMATED_COST.toFixed(4)}.`,
     };
   }
 
-  const guidance = getAdviceGuidance(topicKeyword ?? "");
-  await recordUsage(requestId, agent.id, 90, estimatedCost);
+  // The one real Claude API call in this build. A genuine failure here
+  // (network error, API error) is recorded as a real 'failure' outcome,
+  // NOT silently papered over with the offline fallback text, that would
+  // misrepresent what actually happened in the audit trail.
+  let guidance: string;
+  let actualCostUsd: number;
+  try {
+    const result = await getAdviceLineGuidanceFromClaude(topicKeyword ?? "");
+    guidance = result.guidance;
+    actualCostUsd = result.actualCostUsd;
+  } catch (err) {
+    await recordAgentOutcome(agent.id, requestId, "failure", {
+      reason: "claude_api_error",
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { requestId, sequence, decision: "approved", fullyApproved: true, executed: false, reason: "Claude API call failed, see audit_log for detail." };
+  }
+
+  // Record the ACTUAL measured cost, not the worst-case estimate used for the pre-check.
+  await recordUsage(requestId, agent.id, 90, actualCostUsd);
   await sql`update requests set agent_id = ${agent.id}, status = 'executed', resolved_at = now() where id = ${requestId};`;
-  await recordAgentOutcome(agent.id, requestId, "success", { topicKeyword, guidance });
+  await recordAgentOutcome(agent.id, requestId, "success", { topicKeyword, guidance, actualCostUsd });
 
   return { requestId, sequence, decision: "approved", fullyApproved: true, executed: true, guidance };
 }
