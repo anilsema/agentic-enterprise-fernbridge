@@ -139,3 +139,9 @@ The fix is `create view ... with (security_invoker = true)` (Postgres 15+, which
 
 - No `MEMBER_PII` detail table (contact info, financial records) — the demo doesn't need real member data to prove the governance pattern, and inventing realistic-looking PII for a public repo is the wrong trade-off even for fictitious data.
 - No historical versioning table for `POLICY_POSITIONS` — a real implementation would need this, the demo doesn't.
+
+## What the budget cap does and does not protect against
+
+`TOKEN_USAGE` and `v_agent_budget_status` provide a genuine, tested, hard ceiling on dollar spend, once `remaining_budget` reaches zero, `checkBudget` refuses further execution (validated Saturday, Deep Block 3). This prevents unbounded cost.
+
+It does **not** prevent rapid exhaustion. A single actor sending requests in a tight loop, bot or otherwise, could burn an agent's entire budget cap in minutes. That stays within the dollar ceiling by definition, but it denies legitimate members access to that agent for the rest of the budget period. The budget cap is a cost control, not a rate control, the two are different problems that require different mechanisms. Rate limiting, Clerk's bot detection, and CAPTCHA on the self-service entry point (see build-plan.md security checklist) are what address availability; the budget cap alone does not.

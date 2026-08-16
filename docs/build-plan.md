@@ -43,5 +43,9 @@ Carried from Friday's consolidation pass, updated as resolved:
 
 ## Security checklist before Monday
 
+- [ ] **Rate limiting** per user/session (or per IP, pre-SSO), independent of the token budget cap. The budget cap prevents unbounded dollar cost but does NOT prevent rapid exhaustion, a single actor hammering the Low-tier autonomous agent (Agent 1, no per-action human gate by design) could burn the entire budget cap in minutes, technically staying within cost limits while denying legitimate members access for the remainder of the period. Budget cap protects spend; rate limiting protects availability. Both are needed, neither substitutes for the other.
+- [ ] **Clerk bot-detection settings** — not automatic by default, needs explicit configuration once SSO is wired up (Monday).
+- [ ] **CAPTCHA or equivalent friction** specifically on the self-service entry point, the only surface an unauthenticated or newly-authenticated actor can use to trigger agent activity.
+
 - [x] Row Level Security (RLS) enabled on all Supabase tables from creation, zero policies defined yet. `anon`/`authenticated` keys currently have no access at all; `service_role` (used by the harness) is unaffected by RLS.
 - [ ] Write actual RLS policies before the external site/self-service tools go live, scoping authenticated access to a member's own data. See `harness/data/data-model.md` for the full reasoning.
