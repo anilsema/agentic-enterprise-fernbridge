@@ -1,0 +1,25 @@
+{
+  "name": "fernbridge-site",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^15.5.4",
+    "react": "^18",
+    "react-dom": "^18",
+    "@clerk/nextjs": "^7.7.6",
+    "postgres": "^3.4.4",
+    "dotenv": "^16.4.5",
+    "@anthropic-ai/sdk": "^0.27.3"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18"
+  }
+}
