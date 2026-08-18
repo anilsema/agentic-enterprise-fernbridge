@@ -72,7 +72,7 @@ export default function LandingPage() {
         </ul>
 
         <h2>Tokenomics, Not Just a Budget Cap</h2>
-        <p>Real-time spend tracking, validated against live infrastructure, distinguishes between two different problems: cost control (a hard budget ceiling per agent, live and tested) and availability control (rate limiting, scoped and designed, next release). Most agentic demos miss this distinction entirely. The budget cap protects the wallet. It does not, by itself, protect against a bot exhausting an agent&apos;s capacity in minutes, that is a rate problem, not a cost problem, and it needs its own mechanism.</p>
+        <p>Real-time spend tracking, validated against live infrastructure, distinguishes between two different problems: cost control (a hard budget ceiling per agent) and availability control (rate limiting, a fixed-window check in middleware, before a request reaches Clerk or any API route). Most agentic demos miss this distinction entirely. The budget cap protects the wallet. It does not, by itself, protect against a bot exhausting an agent&apos;s capacity in minutes, that is a rate problem, not a cost problem, and it needs its own mechanism. Both are live and tested here.</p>
 
         <div className="cta-row">
           <a className="btn btn-primary" href="/demo">Try the Interactive Demo</a>
